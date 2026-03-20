@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AvCore.Application.DTOs;
 
 namespace AvCore.Application.Interfaces
 {
-    public interface IAbuseClient
+    public interface IFileScanner
     {
-        public Task <Response> GetAbuseChClient(string hashValue);
+
     }
 }
