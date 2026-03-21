@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -109,7 +110,8 @@ namespace AvCore.Application.Services
                     _logger.LogInformation($"File '{file}', is larger than allowed");
                     return;
                 }
-                var openRead = _openRead.OpenAsync(file); 
+                var openRead = _openRead.OpenAsync(file);
+                Debug.WriteLine(openRead.Result);
                 var entry = await _zipArcvhiveService.OpenZipArchive(openRead.Result);
                 var tempRoot = _zipArcvhiveService.HandleTempRoot(file);
 

@@ -1,9 +1,11 @@
 ﻿using AVcli.Graphics.UserPanel;
+using AvCore.Application.Interfaces;
+using AvCore.Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-// Time wasted : 16hrs
+// Time wasted : 18hrs
 class Program
 {
     public static IServiceProvider ServiceProvider { get; private set; }
@@ -14,11 +16,14 @@ class Program
         ServiceProvider = services.BuildServiceProvider();
 
         var app = ServiceProvider.GetRequiredService<UserPanel>();
+
         app.Welcome();
     }
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddTransient<UserPanel>();
+        
+       
 
 
     }
