@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AvCore.Domain.Entities.scans
+namespace AvCore.Application.Interfaces
 {
-    public class ScanResult
+    public interface IOpenRead
     {
+        public Task<FileStream> OpenAsync(string archive);
     }
 }

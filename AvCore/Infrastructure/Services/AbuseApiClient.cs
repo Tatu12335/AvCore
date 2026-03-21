@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace AvCore.Infrastructure.Repositories
+namespace AvCore.Infrastructure.Services
 {
     public class AbuseApiClient : IAbuseClient
     {

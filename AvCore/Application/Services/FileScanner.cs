@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -17,11 +18,15 @@ namespace AvCore.Application.Services
         private readonly ILogger _logger;
         private readonly IHasher _hasher;
         private readonly ZipPolicy _policy;
-        public FileScanner(ILogger logger, IHasher hasher,ZipPolicy policy)
+        private readonly IZipArcvhiveService _zipArcvhiveService;
+        private readonly IOpenRead _openRead;
+        public FileScanner(ILogger logger, IHasher hasher,ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead)
         {
             _logger = logger;
             _hasher = hasher;
             _policy = policy;
+            _zipArcvhiveService = zipArcvhiveService;
+            _openRead = openRead;
         }
         public async Task ScanFileAsync(string path)
         {
@@ -91,7 +96,37 @@ namespace AvCore.Application.Services
         }
         public async Task ProcessZipFileAsync(string file)
         {
+            if (string.IsNullOrEmpty(file)) return;
 
+            file = Path.GetFullPath(file);
+
+            try
+            {
+                var fileInfo = new FileInfo(file);
+
+                if (fileInfo.Length > _policy.MaxTotalUncompressed)
+                {
+                    _logger.LogInformation($"File '{file}', is larger than allowed");
+                    return;
+                }
+                var openRead = _openRead.OpenAsync(file); 
+                var entry = await _zipArcvhiveService.OpenZipArchive(openRead.Result);
+                var tempRoot = _zipArcvhiveService.HandleTempRoot(file);
+
+
+                
+
+
+            }
+            catch(InvalidDataException idex)
+            {
+                throw new Exception(idex.Message);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+   
         }
 
     }
