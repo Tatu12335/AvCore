@@ -8,9 +8,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AvCore.Application.Services
+namespace AvCore.Infrastructure.Security
 {
-    public class HasherService : IHasher
+    public class Hasher : IHasher
     {
         public async Task <string> HashFunc(string filepath,FileInfo fileInfo)
         {
