@@ -13,7 +13,7 @@
     • Own MSSQL Database to store users and file signatures
     • Role-based access control (RBAC)
 
-##Architecture##
+#Architecture
 
 ```
 |———Clients
@@ -42,7 +42,7 @@
 |    
 |
 ```
-##Lessons learned##
+#Lessons learned
 ```
 Through this project i have learned about security, about defenses and attacks that Hackers might use to harm someone or something.
 Also this project has taught me a lot about safe file handling and more about data structures eg. The stack. 
