@@ -1,18 +1,12 @@
 ﻿using AvCore.Application.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AVcli.Graphics.UserPanel
 {
     public class UserPanel
     {
         private readonly IFileScanner _fileScanner;
-        UserPanel(IFileScanner fileScanner) 
-        { 
+        public UserPanel(IFileScanner fileScanner)
+        {
             _fileScanner = fileScanner;
         }
         public void Welcome()
@@ -28,8 +22,8 @@ namespace AVcli.Graphics.UserPanel
 
             Console.WriteLine("");
             Console.WriteLine("");
-            Console.WriteLine(" Enter file or a directory to scan");
-            Console.WriteLine(">");
+            Console.WriteLine("Enter file or a directory to scan");
+            Console.Write(">");
             var filepath = Console.ReadLine();
             Console.ForegroundColor = ConsoleColor.Cyan;
 

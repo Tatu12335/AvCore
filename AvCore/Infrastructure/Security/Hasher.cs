@@ -1,18 +1,11 @@
 ﻿using AvCore.Application.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AvCore.Infrastructure.Security
 {
     public class Hasher : IHasher
     {
-        public async Task <string> HashFunc(string filepath,FileInfo fileInfo)
+        public async Task<string> HashFunc(string filepath, FileInfo fileInfo)
         {
             if (!File.Exists(filepath)) throw new FileNotFoundException();
 
@@ -37,7 +30,7 @@ namespace AvCore.Infrastructure.Security
             {
                 return null;
             }
-            
+
         }
     }
 }

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AvCore.Application.DTOs;
+﻿using AvCore.Application.DTOs;
 
 namespace AvCore.Application.Interfaces
 {
     public interface IAbuseClient
     {
-        public Task <Response> GetAbuseChClient(string hashValue);
+        public Task<Response> GetAbuseChClient(string hashValue);
     }
 }

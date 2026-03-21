@@ -1,29 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO.Compression;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using AvCore.Application.Interfaces;
+﻿using AvCore.Application.Interfaces;
 using AvCore.Domain.Entities.policies;
-using AvCore.Domain.Entities.scans;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 
 namespace AvCore.Application.Services
 {
     public class FileScanner : IFileScanner
     {
-        private readonly ILogger _logger;
         private readonly IHasher _hasher;
         private readonly ZipPolicy _policy;
         private readonly IZipArcvhiveService _zipArcvhiveService;
         private readonly IOpenRead _openRead;
-        public FileScanner(ILogger logger, IHasher hasher,ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead)
+        public FileScanner( IHasher hasher, ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead)
         {
-            _logger = logger;
             _hasher = hasher;
             _policy = policy;
             _zipArcvhiveService = zipArcvhiveService;
@@ -45,11 +35,11 @@ namespace AvCore.Application.Services
                 {
                     var files = Directory.EnumerateFiles(currentDir);
 
-                    foreach (var file in files) 
+                    foreach (var file in files)
                     {
                         var ext = Path.GetExtension(file).ToLower();
-                        
-                        if(ext == ".zip")
+
+                        if (ext == ".zip")
                         {
                             await ProcessZipFileAsync(file);
                             break;
@@ -57,10 +47,10 @@ namespace AvCore.Application.Services
                         else
                         {
                             FileInfo fileInfo = new FileInfo(file);
-                            await _hasher.HashFunc(file,fileInfo);
-                            
+                            await _hasher.HashFunc(file, fileInfo);
+
                         }
-                    
+
                     }
                     var directories = Directory.EnumerateDirectories(currentDir);
 
@@ -80,7 +70,8 @@ namespace AvCore.Application.Services
                             else
                             {
                                 FileInfo fileInfo = new FileInfo(file);
-                                await _hasher.HashFunc(file, fileInfo);
+                                var hash = await _hasher.HashFunc(file, fileInfo);
+                                Debug.WriteLine(hash);
                             }
 
                         }
@@ -89,7 +80,7 @@ namespace AvCore.Application.Services
 
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     throw new Exception(ex.Message);
                 }
@@ -107,28 +98,22 @@ namespace AvCore.Application.Services
 
                 if (fileInfo.Length > _policy.MaxTotalUncompressed)
                 {
-                    _logger.LogInformation($"File '{file}', is larger than allowed");
+                    // File is too big
                     return;
                 }
                 var openRead = _openRead.OpenAsync(file);
-                Debug.WriteLine(openRead.Result);
                 var entry = await _zipArcvhiveService.OpenZipArchive(openRead.Result);
                 var tempRoot = _zipArcvhiveService.HandleTempRoot(file);
-
-
-                
-
-
             }
-            catch(InvalidDataException idex)
+            catch (InvalidDataException idex)
             {
                 throw new Exception(idex.Message);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
-   
+
         }
 
     }

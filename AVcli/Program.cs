@@ -1,10 +1,12 @@
 ﻿using AVcli.Graphics.UserPanel;
 using AvCore.Application.Interfaces;
+using AvCore.Application.Services;
+using AvCore.Domain.Entities.policies;
+using AvCore.Infrastructure.Security;
 using AvCore.Infrastructure.Services;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography.X509Certificates;
 // Time wasted : 18hrs
 class Program
 {
@@ -18,12 +20,17 @@ class Program
         var app = ServiceProvider.GetRequiredService<UserPanel>();
 
         app.Welcome();
+
     }
-    private static void ConfigureServices(IServiceCollection services)
+    public static void ConfigureServices(IServiceCollection services)
     {
+        services.AddTransient<IFileScanner, FileScanner>();
         services.AddTransient<UserPanel>();
-        
-       
+        services.AddTransient<IHasher, Hasher>();
+        services.AddTransient<ZipPolicy>();
+        services.AddTransient<IZipArcvhiveService, ZipArchiveService>();
+        services.AddTransient<IOpenRead, OpenRead>();
+
 
 
     }
