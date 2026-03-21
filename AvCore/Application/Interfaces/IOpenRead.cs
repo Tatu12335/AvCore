@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace AvCore.Application.Interfaces
 {
-    public interface IFileScanner
+    public interface IOpenRead
     {
-        public Task ScanFileAsync(string path);
-        public Task ProcessZipFileAsync(string file);
-
+        public Task<FileStream> OpenAsync(string archive);
     }
 }

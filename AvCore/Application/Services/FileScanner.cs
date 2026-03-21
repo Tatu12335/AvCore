@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using AvCore.Application.Interfaces;
+using AvCore.Domain.Entities.policies;
+using AvCore.Domain.Entities.scans;
 using Microsoft.Extensions.Logging;
 
 
@@ -12,11 +17,119 @@ namespace AvCore.Application.Services
     public class FileScanner : IFileScanner
     {
         private readonly ILogger _logger;
-        public FileScanner(ILogger logger) 
-        { 
+        private readonly IHasher _hasher;
+        private readonly ZipPolicy _policy;
+        private readonly IZipArcvhiveService _zipArcvhiveService;
+        private readonly IOpenRead _openRead;
+        public FileScanner(ILogger logger, IHasher hasher,ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead)
+        {
             _logger = logger;
+            _hasher = hasher;
+            _policy = policy;
+            _zipArcvhiveService = zipArcvhiveService;
+            _openRead = openRead;
         }
+        public async Task ScanFileAsync(string path)
+        {
+            path = Path.GetFullPath(path);
+            Stack<string> dirs = new Stack<string>();
+            dirs.Push(path);
 
+
+            // ENJOY THE SPAGHETTI :)
+            while (dirs.Count > 0)
+            {
+                var currentDir = dirs.Pop();
+
+                try
+                {
+                    var files = Directory.EnumerateFiles(currentDir);
+
+                    foreach (var file in files) 
+                    {
+                        var ext = Path.GetExtension(file).ToLower();
+                        
+                        if(ext == ".zip")
+                        {
+                            await ProcessZipFileAsync(file);
+                            break;
+                        }
+                        else
+                        {
+                            FileInfo fileInfo = new FileInfo(file);
+                            await _hasher.HashFunc(file,fileInfo);
+                            
+                        }
+                    
+                    }
+                    var directories = Directory.EnumerateDirectories(currentDir);
+
+                    foreach (var dir in directories)
+                    {
+                        var enumFiles = Directory.EnumerateFiles(dir, "*");
+
+                        foreach (var file in enumFiles)
+                        {
+                            var extension = Path.GetExtension(file).ToLower();
+
+                            if (extension == ".zip")
+                            {
+                                await ProcessZipFileAsync(file);
+                                break;
+                            }
+                            else
+                            {
+                                FileInfo fileInfo = new FileInfo(file);
+                                await _hasher.HashFunc(file, fileInfo);
+                            }
+
+                        }
+
+                        dirs.Push(dir);
+
+                    }
+                }
+                catch(Exception ex)
+                {
+                    throw new Exception(ex.Message);
+                }
+            }
+        }
+        public async Task ProcessZipFileAsync(string file)
+        {
+            if (string.IsNullOrEmpty(file)) return;
+
+            file = Path.GetFullPath(file);
+
+            try
+            {
+                var fileInfo = new FileInfo(file);
+
+                if (fileInfo.Length > _policy.MaxTotalUncompressed)
+                {
+                    _logger.LogInformation($"File '{file}', is larger than allowed");
+                    return;
+                }
+                var openRead = _openRead.OpenAsync(file);
+                Debug.WriteLine(openRead.Result);
+                var entry = await _zipArcvhiveService.OpenZipArchive(openRead.Result);
+                var tempRoot = _zipArcvhiveService.HandleTempRoot(file);
+
+
+                
+
+
+            }
+            catch(InvalidDataException idex)
+            {
+                throw new Exception(idex.Message);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+   
+        }
 
     }
 }
