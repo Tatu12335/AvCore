@@ -5,7 +5,7 @@ namespace AvCore.Infrastructure.Security
 {
     public class Hasher : IHasher
     {
-        public async Task<string> HashFunc(string filepath, FileInfo fileInfo)
+        public async Task<string> HashFunc(string filepath)
         {
             if (!File.Exists(filepath)) throw new FileNotFoundException();
 
@@ -14,7 +14,7 @@ namespace AvCore.Infrastructure.Security
                 using var sha256 = SHA256.Create();
 
                 // Open File for read, allow other processes to read/write while we compute the hash
-                using var fS = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var fS = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
                 // Ensure position is at the start
                 if (fS.CanSeek) fS.Position = 0;

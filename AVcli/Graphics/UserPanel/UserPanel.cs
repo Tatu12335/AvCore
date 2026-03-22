@@ -33,6 +33,7 @@ namespace AVcli.Graphics.UserPanel
                 return;
             }
 
+            filepath = filepath.Replace("\"", "").Trim();
 
             _fileScanner.ScanFileAsync(filepath);
         }

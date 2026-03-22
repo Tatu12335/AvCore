@@ -47,7 +47,8 @@ namespace AvCore.Application.Services
                         else
                         {
                             FileInfo fileInfo = new FileInfo(file);
-                            await _hasher.HashFunc(file, fileInfo);
+                            var hash = await _hasher.HashFunc(file);
+                            Debug.WriteLine(hash);
 
                         }
 
@@ -70,8 +71,9 @@ namespace AvCore.Application.Services
                             else
                             {
                                 FileInfo fileInfo = new FileInfo(file);
-                                var hash = await _hasher.HashFunc(file, fileInfo);
+                                var hash = await _hasher.HashFunc(file);
                                 Debug.WriteLine(hash);
+                                
                             }
 
                         }
