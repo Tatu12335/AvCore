@@ -2,6 +2,6 @@
 {
     public interface IHasher
     {
-        public Task<string> HashFunc(string file, FileInfo fileInfo);
+        public Task<string> HashFunc(FileInfo filepath);
     }
 }
