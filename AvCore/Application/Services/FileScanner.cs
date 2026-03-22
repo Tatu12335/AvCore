@@ -1,8 +1,12 @@
-﻿using AvCore.Application.Interfaces;
-using AvCore.Domain.Entities.policies;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-
+﻿
+        using AvCore.Application.Interfaces;
+        using AvCore.Domain.Entities.policies;
+        using Microsoft.Extensions.Logging;
+        using System;
+        using System.Collections.Generic;
+        using System.Diagnostics;
+        using System.IO;
+        using System.Threading.Tasks;
 
 namespace AvCore.Application.Services
 {
@@ -12,7 +16,7 @@ namespace AvCore.Application.Services
         private readonly ZipPolicy _policy;
         private readonly IZipArcvhiveService _zipArcvhiveService;
         private readonly IOpenRead _openRead;
-        public FileScanner( IHasher hasher, ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead)
+        public FileScanner(IHasher hasher, ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead)
         {
             _hasher = hasher;
             _policy = policy;
@@ -24,7 +28,7 @@ namespace AvCore.Application.Services
             path = Path.GetFullPath(path);
             Stack<string> dirs = new Stack<string>();
             dirs.Push(path);
-
+            Debug.WriteLine("MATAFAKA");
 
             // ENJOY THE SPAGHETTI :)
             while (dirs.Count > 0)
@@ -47,11 +51,16 @@ namespace AvCore.Application.Services
                         else
                         {
                             FileInfo fileInfo = new FileInfo(file);
-                            await _hasher.HashFunc(file, fileInfo);
+
+                            var hash = await _hasher.HashFunc(fileInfo);
+                            Debug.WriteLine("TOIMI PERKELE2");
+                            if (string.IsNullOrEmpty(hash))
+                                throw new InvalidOperationException($"Hasher returned null/empty for file '{fileInfo.FullName}'.");
 
                         }
 
                     }
+
                     var directories = Directory.EnumerateDirectories(currentDir);
 
                     foreach (var dir in directories)
@@ -70,8 +79,11 @@ namespace AvCore.Application.Services
                             else
                             {
                                 FileInfo fileInfo = new FileInfo(file);
-                                var hash = await _hasher.HashFunc(file, fileInfo);
-                                Debug.WriteLine(hash);
+                                var hash = await _hasher.HashFunc(fileInfo);
+                                Debug.WriteLine("TOIMI PERKELE");
+                                if (string.IsNullOrEmpty(hash))
+                                    throw new InvalidOperationException($"Hasher returned null/empty for file '{fileInfo.FullName}'.");
+
                             }
 
                         }
@@ -82,7 +94,8 @@ namespace AvCore.Application.Services
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(ex.Message);
+                    // Preserve original exception as InnerException so stack trace and type are not lost
+                    throw new Exception($"Error scanning directory '{currentDir}'", ex);
                 }
             }
         }
@@ -107,14 +120,15 @@ namespace AvCore.Application.Services
             }
             catch (InvalidDataException idex)
             {
-                throw new Exception(idex.Message);
+                throw new Exception($"Invalid ZIP data in file '{file}'", idex);
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception($"Failed processing zip file '{file}'", ex);
             }
 
         }
 
-    }
+    } 
 }
+
