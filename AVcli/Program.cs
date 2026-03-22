@@ -1,4 +1,5 @@
-﻿using AVcli.Graphics.UserPanel;
+﻿
+using AVcli.Graphics.UserPanel;
 using AvCore.Application.Interfaces;
 using AvCore.Application.Services;
 using AvCore.Domain.Entities.policies;
@@ -31,7 +32,11 @@ class Program
         services.AddTransient<IZipArcvhiveService, ZipArchiveService>();
         services.AddTransient<IOpenRead, OpenRead>();
 
-
-
+        services.AddLogging(builder =>
+        {
+            // Add console provider so logs are actually emitted
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Debug);
+        });
     }
 }

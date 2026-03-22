@@ -1,4 +1,5 @@
 ﻿using AvCore.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Security.Cryptography;
 
@@ -6,12 +7,16 @@ namespace AvCore.Infrastructure.Security
 {
     public class Hasher : IHasher
     {
+        private readonly ILogger<Hasher> _logger;
+        public Hasher(ILogger<Hasher> logger)
+        {  _logger = logger; }
         public async Task<string> HashFunc(FileInfo filepath)
         {
-            
 
-            
-                
+            try
+            {
+
+
                 using var sha256 = SHA256.Create();
 
                 // Open File for read, allow other processes to read/write while we compute the hash
@@ -26,7 +31,12 @@ namespace AvCore.Infrastructure.Security
                 string hashHex = Convert.ToHexString(hashValue);
 
                 return hashHex;
-            
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, " \"Failed to compute SHA256 for file '{FilePath}' (Exists: {Exists})\", filepath?.FullName, filepath?.Exists);\r\n ");               
+                throw; // rethrow to preserve original stack trace"
+            }
             
 
         }
