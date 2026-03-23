@@ -7,7 +7,6 @@ using AvCore.Infrastructure.Security;
 using AvCore.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Security.Cryptography.X509Certificates;
 // Time wasted : 21hrs
 class Program
 {
@@ -20,7 +19,7 @@ class Program
 
         var app = ServiceProvider.GetRequiredService<UserPanel>();
 
-        app.Welcome();
+        await app.Welcome();
 
     }
     public static void ConfigureServices(IServiceCollection services)
