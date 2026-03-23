@@ -8,7 +8,7 @@ using AvCore.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography.X509Certificates;
-// Time wasted : 20hrs
+// Time wasted : 21hrs
 class Program
 {
     public static IServiceProvider ServiceProvider { get; private set; }

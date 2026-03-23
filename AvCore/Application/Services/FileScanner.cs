@@ -33,71 +33,44 @@ namespace AvCore.Application.Services
             path = Path.GetFullPath(path);
             Stack<string> dirs = new Stack<string>();
             dirs.Push(path);
-            Debug.WriteLine("MATAFAKA");
+            Debug.WriteLine("MATAFAKA");   
 
             while (dirs.Count > 0)
             {
                 var currentDir = dirs.Pop();
-
+                
                 try
                 {
-                    var files = Directory.EnumerateFiles(currentDir);
-
-                    foreach (var file in files)
+                    if (Directory.Exists(currentDir))
                     {
-                        var ext = Path.GetExtension(file).ToLower();
-
-                        if (ext == ".zip")
+                        
+                        var files2 = Directory.EnumerateFiles(currentDir);
+                        
+                        foreach ( var f in files2)
                         {
-                            await ProcessZipFileAsync(file);
-                            break;
-                        }
-                        else
-                        {
-                            FileInfo fileInfo = new FileInfo(file);
-
-                            var hash = await _hasher.HashFunc(fileInfo);
-                            Debug.WriteLine("TOIMI PERKELE2");
-
-                            if (string.IsNullOrEmpty(hash))
+                            var ext = Path.GetExtension(f).ToLower();
+                            
+                            if (ext == ".zip") await ProcessZipFileAsync(f);
+                            var hash = await _hasher.HashFunc(f);
+                            Debug.WriteLine(hash);
+                            
+                            if (Directory.Exists(f))
                             {
-                                _logger.LogError("Hasher returned null/empty for file : '{FilePath}' ", fileInfo.FullName);
-                                throw new InvalidOperationException($"Hasher returned null/empty for file '{fileInfo.FullName}'.");
-                            }
-                        }
-                    }
-
-                    var directories = Directory.EnumerateDirectories(currentDir);
-
-                    foreach (var dir in directories)
-                    {
-                        var enumFiles = Directory.EnumerateFiles(dir, "*");
-
-                        foreach (var file in enumFiles)
-                        {
-                            var extension = Path.GetExtension(file).ToLower();
-
-                            if (extension == ".zip")
-                            {
-                                await ProcessZipFileAsync(file);
+                                dirs.Push(f);
                                 break;
                             }
-                            else
-                            {
-                                FileInfo fileInfo = new FileInfo(file);
-                                var hash = await _hasher.HashFunc(fileInfo);
-                                Debug.WriteLine("TOIMI PERKELE");
-
-                                if (string.IsNullOrEmpty(hash))
-                                {
-                                    _logger.LogError("Hasher returned null/empty for file : '{FilePath}'", fileInfo.FullName);
-                                    throw new InvalidOperationException($"Hasher returned null/empty for file '{fileInfo.FullName}'.");
-                                }
-                            }
                         }
-
-                        dirs.Push(dir);
                     }
+                    else if(File.Exists(currentDir))
+                    {
+                        var hash = await _hasher.HashFunc(currentDir);
+                        Debug.WriteLine(hash);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"{currentDir}");
+                    }
+                   
                 }
                 catch (Exception ex)
                 {
@@ -105,8 +78,8 @@ namespace AvCore.Application.Services
                     throw new Exception($"Error scanning directory : '{currentDir}'", ex);
                 }
             }
+           
         }
-
         public async Task ProcessZipFileAsync(string file)
         {
             if (string.IsNullOrEmpty(file)) return;
