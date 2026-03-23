@@ -33,7 +33,7 @@ namespace AvCore.Application.Services
             path = Path.GetFullPath(path);
             Stack<string> dirs = new Stack<string>();
             dirs.Push(path);
-            Debug.WriteLine("MATAFAKA");   
+              
 
             while (dirs.Count > 0)
             {
@@ -44,22 +44,26 @@ namespace AvCore.Application.Services
                     if (Directory.Exists(currentDir))
                     {
                         
-                        var files2 = Directory.EnumerateFiles(currentDir);
-                        
-                        foreach ( var f in files2)
-                        {
-                            var ext = Path.GetExtension(f).ToLower();
-                            
-                            if (ext == ".zip") await ProcessZipFileAsync(f);
-                            var hash = await _hasher.HashFunc(f);
-                            Debug.WriteLine(hash);
-                            
-                            if (Directory.Exists(f))
-                            {
-                                dirs.Push(f);
-                                break;
-                            }
+                        var subDirs = Directory.EnumerateDirectories(currentDir);
+
+                        foreach (var subDir in subDirs) 
+                        { 
+                            dirs.Push(subDir);
                         }
+
+                        
+                            var files = Directory.EnumerateFiles(currentDir,"*");
+                            
+                            foreach( var f in files)
+                            {
+                                var extension = Path.GetExtension(f).ToLower();
+
+                                if(extension == ".zip") await ProcessZipFileAsync(f);
+
+                                var hash = await _hasher.HashFunc(f);
+                                Debug.WriteLine(hash);
+                            }
+                        
                     }
                     else if(File.Exists(currentDir))
                     {
@@ -71,6 +75,10 @@ namespace AvCore.Application.Services
                         Debug.WriteLine($"{currentDir}");
                     }
                    
+                }
+                catch(UnauthorizedAccessException uaex)
+                {
+                    _logger.LogWarning(uaex, "Error scanning directory : {Directory}",currentDir);
                 }
                 catch (Exception ex)
                 {
