@@ -2,11 +2,7 @@
 using AvCore.Application.Interfaces;
 using AvCore.Domain.Entities.policies;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace AvCore.Application.Services
 {
@@ -18,9 +14,9 @@ namespace AvCore.Application.Services
         private readonly IOpenRead _openRead;
         private readonly ILogger<FileScanner> _logger;
 
-        public FileScanner( IHasher hasher,ZipPolicy policy,IZipArcvhiveService zipArcvhiveService,IOpenRead openRead, ILogger<FileScanner> logger)
+        public FileScanner(IHasher hasher, ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead, ILogger<FileScanner> logger)
         {
-            
+
             _hasher = hasher;
             _policy = policy;
             _zipArcvhiveService = zipArcvhiveService;
@@ -30,74 +26,74 @@ namespace AvCore.Application.Services
 
         public async Task ScanFileAsync(string path)
         {
+
+            if (File.Exists(path))
+            {              
+                var hash = await _hasher.HashFunc(path);
+                
+                Console.WriteLine(hash);
+                return;
+            }
+
+
             path = Path.GetFullPath(path);
             Stack<string> dirs = new Stack<string>();
             dirs.Push(path);
-            Debug.WriteLine("MATAFAKA");
+            var visited = new HashSet<string>();
 
             while (dirs.Count > 0)
             {
                 var currentDir = dirs.Pop();
-
+                if (visited.Contains(currentDir)) continue;
+                visited.Add(currentDir);
                 try
                 {
-                    var files = Directory.EnumerateFiles(currentDir);
-
-                    foreach (var file in files)
+  
+                    if (File.Exists(currentDir))
                     {
-                        var ext = Path.GetExtension(file).ToLower();
 
-                        if (ext == ".zip")
+                        var hash = await _hasher.HashFunc(currentDir);
+                        Console.WriteLine(hash);
+                    }
+                    else if (Directory.Exists(currentDir))
+                    {
+                        var subDirs = Directory.EnumerateDirectories(currentDir);
+
+                        foreach (var subDir in subDirs)
                         {
-                            await ProcessZipFileAsync(file);
-                            break;
+                            dirs.Push(subDir);
                         }
-                        else
+                        
+
+                        var files = Directory.EnumerateFiles(currentDir);
+                        
+                        foreach (var f in files)
                         {
-                            FileInfo fileInfo = new FileInfo(file);
-
-                            var hash = await _hasher.HashFunc(fileInfo);
-                            Debug.WriteLine("TOIMI PERKELE2");
-
-                            if (string.IsNullOrEmpty(hash))
+                            try
                             {
-                                _logger.LogError("Hasher returned null/empty for file : '{FilePath}' ", fileInfo.FullName);
-                                throw new InvalidOperationException($"Hasher returned null/empty for file '{fileInfo.FullName}'.");
+                                var extension = Path.GetExtension(f).ToLower();
+                                
+                                if (extension == ".zip") await ProcessZipFileAsync(f);
+
+                                var hash = await _hasher.HashFunc(f);
+                                Console.WriteLine("Hashing " + hash);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception("Error hashing : " + ex.Message);
                             }
                         }
+                        Debug.WriteLine(currentDir);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"{currentDir}");
                     }
 
-                    var directories = Directory.EnumerateDirectories(currentDir);
-
-                    foreach (var dir in directories)
-                    {
-                        var enumFiles = Directory.EnumerateFiles(dir, "*");
-
-                        foreach (var file in enumFiles)
-                        {
-                            var extension = Path.GetExtension(file).ToLower();
-
-                            if (extension == ".zip")
-                            {
-                                await ProcessZipFileAsync(file);
-                                break;
-                            }
-                            else
-                            {
-                                FileInfo fileInfo = new FileInfo(file);
-                                var hash = await _hasher.HashFunc(fileInfo);
-                                Debug.WriteLine("TOIMI PERKELE");
-
-                                if (string.IsNullOrEmpty(hash))
-                                {
-                                    _logger.LogError("Hasher returned null/empty for file : '{FilePath}'", fileInfo.FullName);
-                                    throw new InvalidOperationException($"Hasher returned null/empty for file '{fileInfo.FullName}'.");
-                                }
-                            }
-                        }
-
-                        dirs.Push(dir);
-                    }
+                }
+                catch (UnauthorizedAccessException uaex)
+                {
+                    _logger.LogWarning(uaex, "Error scanning directory : {Directory}", currentDir);
                 }
                 catch (Exception ex)
                 {
@@ -105,8 +101,8 @@ namespace AvCore.Application.Services
                     throw new Exception($"Error scanning directory : '{currentDir}'", ex);
                 }
             }
-        }
 
+        }
         public async Task ProcessZipFileAsync(string file)
         {
             if (string.IsNullOrEmpty(file)) return;

@@ -9,7 +9,7 @@ namespace AVcli.Graphics.UserPanel
         {
             _fileScanner = fileScanner;
         }
-        public void Welcome()
+        public async Task Welcome()
         {
             Console.ForegroundColor = ConsoleColor.Green;
             var welcome = @"__        __   _                          
@@ -34,8 +34,8 @@ namespace AVcli.Graphics.UserPanel
             }
 
             filepath = filepath.Replace('"', ' ').Trim();
-            
-            _fileScanner.ScanFileAsync(filepath);
+
+           await _fileScanner.ScanFileAsync(filepath);
         }
     }
 }
