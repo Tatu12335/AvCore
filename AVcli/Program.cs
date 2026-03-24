@@ -6,7 +6,7 @@ using AvCore.Infrastructure.Security;
 using AvCore.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-// Time wasted : 22hrs
+// Time wasted : 24hrs
 class Program
 {
     public static IServiceProvider ServiceProvider { get; private set; }
