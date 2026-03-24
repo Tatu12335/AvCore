@@ -8,12 +8,12 @@
   • Protection againts zip attacks eg. zip-slip and, zip bomming.
   • File Scanning functionality
   • File hashing
-  • Role-based access control (RBAC)
+  
 
 ## Upcoming features : 
     • Determine File Signature for safer and more accurate file scanning.
     • My Own MSSQL Database to store users and file signatures(Probably with some already existing dataset)
-    
+    • Role-based access control (RBAC)
 
 ## Technical HighLights :
     • Clean architecture (Application,Domain,Infrastructure)
