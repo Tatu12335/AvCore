@@ -30,22 +30,10 @@ namespace AvCore.Application.Services
     
 
         // SORRY for the spaghetti :(
-        public async Task<string> ScanFileAsync(string path)
+        // Also i realize this method breaks abstraction but it works for now.(i validate directories and files here but it should be in the infrastructure layer)
+        // But from now on i will do any io related operations in the infra layer.
+        public async Task ScanFileAsync(string path)
         {
-
-            if (File.Exists(path))
-            {              
-                var hash = await _hasher.HashFunc(path);
-                
-                Console.WriteLine(hash);
-
-                var response  = await _abuseClient.GetAbuseChClient(hash);
-
-                if (response == null) throw new Exception("API Response is null!");
-
-                var handled = await _handleResults.HandleResult(response);
-                return handled;
-            }
 
 
             path = Path.GetFullPath(path);
@@ -89,9 +77,9 @@ namespace AvCore.Application.Services
 
                                 var hash = await _hasher.HashFunc(f);
                                 
-                                Console.WriteLine("Hashing " + hash);
+                                
 
-                                if (hash == null) return "";
+                                if (hash == null) return ;
                                  
                                 var response = await _abuseClient.GetAbuseChClient(hash);
 
@@ -114,14 +102,14 @@ namespace AvCore.Application.Services
                     else
                     {
                         Debug.WriteLine($"{currentDir}");
-                        return null;
+                        
                     }
 
                 }
                 catch (UnauthorizedAccessException uaex)
                 {
                     _logger.LogWarning(uaex, "Error scanning directory : {Directory}", currentDir);
-                    return null;
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -129,10 +117,11 @@ namespace AvCore.Application.Services
                     throw new Exception($"Error scanning directory : '{currentDir}'", ex);
                 }
             }
-            return null;
+            return;
         }
         public async Task ProcessZipFileAsync(string file)
         {
+            Debug.WriteLine(file);
             if (string.IsNullOrEmpty(file)) return;
 
             file = Path.GetFullPath(file);
@@ -145,17 +134,83 @@ namespace AvCore.Application.Services
                 {
                     // File is too big
                     _logger.LogWarning("Zip file '{File}' skipped because size {Size} exceeds policy {Max}", file, fileInfo.Length, _policy.MaxTotalUncompressed);
+                    Debug.WriteLine("zip file exceeds the policy");
                     return;
                 }
 
                 var openRead = await _openRead.OpenAsync(file);
                 var entry = await _zipArcvhiveService.OpenZipArchive(openRead);
                 var tempRoot = _zipArcvhiveService.HandleTempRoot(file);
+
+                try
+                {
+                    if (entry.Entries.Count > _policy.MaxEntries)
+                    {
+                        _logger.LogWarning("Zip file : '{File}', skipped because {Count} exceeds the max entries policy {Max} ",entry, entry.Entries.Count, _policy.MaxEntries);
+                        return;
+                    }
+
+                    long currentTotalUncompressed = 0;
+
+                    foreach(var entries in entry.Entries)
+                    {
+                        if (string.IsNullOrEmpty(entries.Name) && entries.FullName.EndsWith("/")) continue;
+
+                        currentTotalUncompressed += entries.Length;
+                        if(currentTotalUncompressed > _policy.MaxTotalUncompressed)
+                        {
+                            _logger.LogWarning("File : {FilePath}, exceeds the Max Total Uncompressed size. Skipping further entries.", entries.FullName);
+                            return;
+                        }
+
+                        if(entries.CompressedLength > 0)
+                        {
+                            double ratio = entries.Length / (double)entries.CompressedLength;
+
+                            if(double.IsNaN(ratio) || double.IsInfinity(ratio) || ratio > _policy.MaxCompressionRatio )
+                            {
+                                _logger.LogWarning("Potential zip bomb detected in : {FilePath}, Entry : {Entry}",entries.FullName,entries.Name);
+                                return;
+                            }
+                        }
+                        var destinationPath = _zipArcvhiveService.CreateDestinationPath(tempRoot, entries);
+                        Debug.WriteLine(destinationPath);
+                        await _zipArcvhiveService.ExtractFileAsync(destinationPath,entries);
+                        await ScanFileAsync(destinationPath);
+
+                        try
+                        {
+                            if(File.Exists(destinationPath))
+                            {
+                                File.Delete(destinationPath);
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore cleanup failures temp root will remain for later cleanup
+                        }
+                    }
+
+                }
+                finally
+                {
+                    try
+                    {
+                        if(Directory.Exists(tempRoot))
+                        {
+                            Directory.Delete(tempRoot,recursive:true);
+                        }
+                    }
+                    catch
+                    {
+                        ////Ignore clean up errors - OS will clean them later
+                    }
+                }
+
             }
-            catch (InvalidDataException idex)
+            catch (InvalidDataException)
             {
-                _logger.LogError(idex, "Invalid ZIP data in file '{File}'", file);
-                throw new Exception($"Invalid ZIP data in file '{file}'", idex);
+                // Not a zip, do nothing
             }
             catch (Exception ex)
             {
