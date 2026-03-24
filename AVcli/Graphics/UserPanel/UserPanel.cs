@@ -35,7 +35,14 @@ namespace AVcli.Graphics.UserPanel
 
             filepath = filepath.Replace('"', ' ').Trim();
 
-           await _fileScanner.ScanFileAsync(filepath);
+          
+            var response = await _fileScanner.ScanFileAsync(filepath);
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(response);
+
+
+
         }
     }
 }
