@@ -1,5 +1,6 @@
 ﻿using AvCore.Application.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace AvCore.Infrastructure.Security
@@ -13,9 +14,7 @@ namespace AvCore.Infrastructure.Security
         {
 
             try
-            {
-                Console.WriteLine(filepath);
-                Console.WriteLine("opening file");
+            {        
 
                 var sha256 = SHA256.Create();
 
@@ -37,7 +36,7 @@ namespace AvCore.Infrastructure.Security
                     }
                     else
                     {
-                        Console.WriteLine("Hashing lasted for over 30 seconds");
+                        Debug.WriteLine("Hashing lasted for over 30 seconds");
                     }
 
                     
