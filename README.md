@@ -1,21 +1,21 @@
 ## Av_Suite - Suite for filescanning and packet sniffing[Upcoming!] ##
 
-#Tech Stack : 
+## Tech Stack : 
   • .NET 8,C#, abuse.ch for scanning file-hashes
   • WPF[Upcoming], cli 
 
-#Key features
+## Key features :
   • Protection againts zip attacks eg. zip-slip and, zip bomming.
   • File Scanning functionality
   • File hashing
   • Role-based access control (RBAC)
 
-#Upcoming features
+## Upcoming features : 
     • Determine File Signature for safer and more accurate file scanning.
     • My Own MSSQL Database to store users and file signatures(Probably with some already existing dataset)
     
 
-## Technical HighLights
+## Technical HighLights :
     • Clean architecture (Application,Domain,Infrastructure)
     • Asynchrouns file processing
     • Secure file handling
@@ -49,7 +49,7 @@
 |    
 |
 ```
-#Lessons learned
+## Lessons learned
 ```
 Through this project i have learned about security,
 about defenses and attacks that Hackers might use to harm someone or something.
