@@ -13,18 +13,24 @@ namespace AvCore.Application.Services
         private readonly IZipArcvhiveService _zipArcvhiveService;
         private readonly IOpenRead _openRead;
         private readonly ILogger<FileScanner> _logger;
+        private readonly IAbuseClient _abuseClient;
+        private readonly IHandleResults _handleResults;
 
-        public FileScanner(IHasher hasher, ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead, ILogger<FileScanner> logger)
+        public FileScanner(IHasher hasher, ZipPolicy policy, IZipArcvhiveService zipArcvhiveService, IOpenRead openRead, ILogger<FileScanner> logger, IHandleResults handleResults,IAbuseClient abuseClient)
         {
 
-            _hasher = hasher;
-            _policy = policy;
-            _zipArcvhiveService = zipArcvhiveService;
-            _openRead = openRead;
-            _logger = logger;
+            _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
+            _policy = policy ?? throw new ArgumentNullException(nameof(policy));
+            _zipArcvhiveService = zipArcvhiveService ?? throw new ArgumentNullException(nameof(zipArcvhiveService));
+            _openRead = openRead ?? throw new ArgumentNullException(nameof(openRead));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _abuseClient = abuseClient ?? throw new ArgumentNullException(nameof(abuseClient)); 
+            _handleResults = handleResults ?? throw new ArgumentNullException(nameof(handleResults));
         }
+    
 
-        public async Task ScanFileAsync(string path)
+        // SORRY for the spaghetti :(
+        public async Task<string> ScanFileAsync(string path)
         {
 
             if (File.Exists(path))
@@ -32,7 +38,13 @@ namespace AvCore.Application.Services
                 var hash = await _hasher.HashFunc(path);
                 
                 Console.WriteLine(hash);
-                return;
+
+                var response  = await _abuseClient.GetAbuseChClient(hash);
+
+                if (response == null) throw new Exception("API Response is null!");
+
+                var handled = await _handleResults.HandleResult(response);
+                return handled;
             }
 
 
@@ -76,24 +88,40 @@ namespace AvCore.Application.Services
                                 if (extension == ".zip") await ProcessZipFileAsync(f);
 
                                 var hash = await _hasher.HashFunc(f);
+                                
                                 Console.WriteLine("Hashing " + hash);
+
+                                if (hash == null) return "";
+                                 
+                                var response = await _abuseClient.GetAbuseChClient(hash);
+
+                                if (response == null) throw new Exception("API Response is null!");
+                                
+                                var handled = await _handleResults.HandleResult(response);
+
+                                Console.WriteLine(handled);
+                                
+
+                                
                             }
                             catch (Exception ex)
                             {
                                 throw new Exception("Error hashing : " + ex.Message);
                             }
                         }
-                        Debug.WriteLine(currentDir);
+                        
                     }
                     else
                     {
                         Debug.WriteLine($"{currentDir}");
+                        return null;
                     }
 
                 }
                 catch (UnauthorizedAccessException uaex)
                 {
                     _logger.LogWarning(uaex, "Error scanning directory : {Directory}", currentDir);
+                    return null;
                 }
                 catch (Exception ex)
                 {
@@ -101,7 +129,7 @@ namespace AvCore.Application.Services
                     throw new Exception($"Error scanning directory : '{currentDir}'", ex);
                 }
             }
-
+            return null;
         }
         public async Task ProcessZipFileAsync(string file)
         {
@@ -120,8 +148,8 @@ namespace AvCore.Application.Services
                     return;
                 }
 
-                var openRead = _openRead.OpenAsync(file);
-                var entry = await _zipArcvhiveService.OpenZipArchive(openRead.Result);
+                var openRead = await _openRead.OpenAsync(file);
+                var entry = await _zipArcvhiveService.OpenZipArchive(openRead);
                 var tempRoot = _zipArcvhiveService.HandleTempRoot(file);
             }
             catch (InvalidDataException idex)
